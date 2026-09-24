@@ -3,6 +3,7 @@ using ECommerceAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceAPI.Controllers
 {
@@ -28,14 +29,18 @@ namespace ECommerceAPI.Controllers
         [HttpGet]
         public IActionResult GetProducts()
         {
-            var products = _context.Products.ToList();
+            var products = _context.Products
+    .Include(p => p.Category)
+    .ToList();
             return Ok(products);
         }
 
         [HttpGet("{id}")]
         public IActionResult GetProductById (int id)
         {
-            var product = _context.Products.Find(id);
+            var product = _context.Products
+     .Include(p => p.Category)
+     .FirstOrDefault(p => p.Id == id);
 
             if (product == null)
             {
