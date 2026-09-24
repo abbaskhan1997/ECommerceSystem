@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerceAPI.Data;
 using ECommerceAPI.Models;
 using ECommerceAPI.Services;
+using ECommerceAPI.DTOs;
 
 namespace ECommerceAPI.Controllers
 {
@@ -16,9 +17,9 @@ namespace ECommerceAPI.Controllers
             _authService = authService;
         }
         [HttpPost("register")]
-        public IActionResult Register (User user)
+        public IActionResult Register (ECommerceAPI.DTOs.RegisterRequest request)
         {
-            var result = _authService.Register(user);
+            var result = _authService.Register(request);
             return Ok(result);
         }
 

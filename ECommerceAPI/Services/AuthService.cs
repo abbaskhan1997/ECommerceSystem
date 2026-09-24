@@ -1,9 +1,11 @@
 ﻿using ECommerceAPI.Data;
 using ECommerceAPI.Models;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using ECommerceAPI.DTOs;
 
 namespace ECommerceAPI.Services
 {
@@ -16,9 +18,15 @@ namespace ECommerceAPI.Services
             _context = context;
             _configuration = configuration;
         }
-        public string Register (User user)
+        public string Register (ECommerceAPI.DTOs.RegisterRequest request)
         {
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            var user = new User
+            {
+                Name = request.Name,
+                Email = request.Email,
+                Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Role = "User"
+            };
 
             _context.Users.Add(user);
             _context.SaveChanges();
@@ -44,7 +52,8 @@ namespace ECommerceAPI.Services
 {
     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
     new Claim(ClaimTypes.Name, user.Name),
-    new Claim(ClaimTypes.Email, user.Email)
+    new Claim(ClaimTypes.Email, user.Email),
+    new Claim(ClaimTypes.Role, user.Role)
 };
 
             var key = new SymmetricSecurityKey(
