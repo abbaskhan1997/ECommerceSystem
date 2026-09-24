@@ -18,6 +18,13 @@ namespace ECommerceAPI.Controllers
             _context = context;
         }
 
+        [HttpGet("admin-test")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminTest ()
+        {
+            return Ok("Admin access granted");
+        }
+
         [HttpGet]
         public IActionResult GetProducts()
         {
@@ -39,6 +46,7 @@ namespace ECommerceAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult CreateProduct(Product product)
         {
             _context.Products.Add(product);
@@ -47,6 +55,7 @@ namespace ECommerceAPI.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult UpdateProduct(int id, Product product)
         {
             if (id != product.Id)
@@ -59,6 +68,7 @@ namespace ECommerceAPI.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult DeleteProduct(int id)
         {
             var product = _context.Products.Find(id);
