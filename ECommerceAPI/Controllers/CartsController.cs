@@ -1,0 +1,93 @@
+﻿using ECommerceAPI.Data;
+using ECommerceAPI.DTOs;
+using ECommerceAPI.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace ECommerceAPI.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class CartsController : ControllerBase
+    {
+        private readonly ApplicationDbContext _context;
+        public CartsController (ApplicationDbContext context)
+        {
+            _context=context;
+         }
+
+        [HttpGet]
+        public IActionResult GetCart ()
+        {
+            var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+            var cart = _context.Carts
+    .Include(c => c.CartItems)
+    .ThenInclude(ci => ci.Product)
+    .FirstOrDefault(c => c.UserId == userId);
+
+            if (cart == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(cart);
+        }
+
+        [HttpPost]
+        public IActionResult AddToCart (AddToCartRequest request)
+        {
+            var userId = int.Parse(
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+            var product = _context.Products.Find(request.ProductId);
+
+            if (product == null)
+            {
+                return NotFound("Product not found");
+            }
+
+            var cart = _context.Carts
+                .FirstOrDefault(c => c.UserId == userId);
+
+            if (cart == null)
+            {
+                cart = new Cart
+                {
+                    UserId = userId
+                };
+
+                _context.Carts.Add(cart);
+                _context.SaveChanges();
+            }
+
+            var cartItem = _context.CartItems
+                .FirstOrDefault(ci =>
+                    ci.CartId == cart.Id &&
+                    ci.ProductId == request.ProductId);
+
+            if (cartItem != null)
+            {
+                cartItem.Quantity += request.Quantity;
+            }
+            else
+            {
+                cartItem = new CartItem
+                {
+                    CartId = cart.Id,
+                    ProductId = request.ProductId,
+                    Quantity = request.Quantity
+                };
+
+                _context.CartItems.Add(cartItem);
+            }
+
+            _context.SaveChanges();
+
+            return Ok(cartItem);
+        }
+    }
+}
