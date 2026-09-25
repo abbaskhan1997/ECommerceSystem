@@ -118,5 +118,29 @@ namespace ECommerceAPI.Controllers
 
             return Ok(cartItem);
         }
+
+        [HttpDelete("{cartItemId}")]
+        public IActionResult RemoveFromCart (int cartItemId)
+        {
+            var userId = int.Parse(
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+            var cartItem = _context.CartItems
+                .Include(ci => ci.Cart)
+                .FirstOrDefault(ci =>
+                    ci.Id == cartItemId &&
+                    ci.Cart!.UserId == userId);
+
+            if (cartItem == null)
+            {
+                return NotFound("Cart item not found");
+            }
+
+            _context.CartItems.Remove(cartItem);
+
+            _context.SaveChanges();
+
+            return Ok("Item removed from cart");
+        }
     }
 }
