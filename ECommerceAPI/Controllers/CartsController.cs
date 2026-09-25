@@ -89,5 +89,34 @@ namespace ECommerceAPI.Controllers
 
             return Ok(cartItem);
         }
+
+        [HttpPut("{cartItemId}")]
+        public IActionResult UpdateQuantity (int cartItemId, int quantity)
+        {
+            var userId = int.Parse(
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+            var cartItem = _context.CartItems
+                .Include(ci => ci.Cart)
+                .FirstOrDefault(ci =>
+                    ci.Id == cartItemId &&
+                    ci.Cart!.UserId == userId);
+
+            if (cartItem == null)
+            {
+                return NotFound("Cart item not found");
+            }
+
+            if (quantity <= 0)
+            {
+                return BadRequest("Quantity must be greater than 0");
+            }
+
+            cartItem.Quantity = quantity;
+
+            _context.SaveChanges();
+
+            return Ok(cartItem);
+        }
     }
 }
