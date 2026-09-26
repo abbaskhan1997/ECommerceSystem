@@ -50,6 +50,16 @@ namespace ECommerceAPI.Controllers
                 return NotFound("Product not found");
             }
 
+            if (request.Quantity <= 0)
+            {
+                return BadRequest("Quantity must be greater than 0");
+            }
+
+            if (request.Quantity > product.StockQuantity)
+            {
+                return BadRequest("Requested quantity is greater than available stock");
+            }
+
             var cart = _context.Carts
                 .FirstOrDefault(c => c.UserId == userId);
 
