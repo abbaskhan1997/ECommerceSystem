@@ -34,7 +34,16 @@ namespace ECommerceAPI.Controllers
                 return NotFound();
             }
 
-            return Ok(cart);
+            var totalAmount = cart.CartItems.Sum(
+              ci => ci.Product!.Price * ci.Quantity);
+
+            return Ok(new
+            {
+                cart.Id,
+                cart.UserId,
+                cart.CartItems,
+                totalAmount
+            });
         }
 
         [HttpPost]
@@ -50,15 +59,7 @@ namespace ECommerceAPI.Controllers
                 return NotFound("Product not found");
             }
 
-            if (request.Quantity <= 0)
-            {
-                return BadRequest("Quantity must be greater than 0");
-            }
-
-            if (request.Quantity > product.StockQuantity)
-            {
-                return BadRequest("Requested quantity is greater than available stock");
-            }
+           
 
             var cart = _context.Carts
                 .FirstOrDefault(c => c.UserId == userId);
@@ -78,6 +79,24 @@ namespace ECommerceAPI.Controllers
                 .FirstOrDefault(ci =>
                     ci.CartId == cart.Id &&
                     ci.ProductId == request.ProductId);
+
+            if (request.Quantity <= 0)
+            {
+                return BadRequest("Quantity must be greater than 0");
+            }
+
+            var newQuantity = request.Quantity;
+
+            if (cartItem != null)
+            {
+                newQuantity = cartItem.Quantity + request.Quantity;
+            }
+
+            if (newQuantity > product.StockQuantity)
+            {
+                return BadRequest("Requested quantity is greater than available stock");
+            }
+
 
             if (cartItem != null)
             {
@@ -108,6 +127,7 @@ namespace ECommerceAPI.Controllers
 
             var cartItem = _context.CartItems
                 .Include(ci => ci.Cart)
+                .Include(ci => ci.Product)
                 .FirstOrDefault(ci =>
                     ci.Id == cartItemId &&
                     ci.Cart!.UserId == userId);
@@ -120,6 +140,11 @@ namespace ECommerceAPI.Controllers
             if (quantity <= 0)
             {
                 return BadRequest("Quantity must be greater than 0");
+            }
+
+            if (quantity > cartItem.Product!.StockQuantity)
+            {
+                return BadRequest("Requested quantity is greater than available stock");
             }
 
             cartItem.Quantity = quantity;
