@@ -95,4 +95,47 @@ public class OrdersController : ControllerBase
 
         return Ok(order);
     }
+
+    [HttpPost("{id}/checkout")]
+    public IActionResult Checkout (int id)
+    {
+        var userId = int.Parse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var order = _context.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .FirstOrDefault(o => o.Id == id && o.UserId == userId);
+
+        if (order == null)
+        {
+            return NotFound("Order not found");
+        }
+
+        if (order.Status != "Pending")
+        {
+            return BadRequest("Order is already processed");
+        }
+
+        foreach (var orderItem in order.OrderItems)
+        {
+            if (orderItem.Quantity > orderItem.Product!.StockQuantity)
+            {
+                return BadRequest(
+                    $"Not enough stock for product {orderItem.ProductId}");
+            }
+        }
+
+        foreach (var orderItem in order.OrderItems)
+        {
+            orderItem.Product!.StockQuantity -= orderItem.Quantity;
+        }
+
+        order.Status = "Confirmed";
+
+        _context.SaveChanges();
+
+        return Ok(order);
+    }
+
 }
