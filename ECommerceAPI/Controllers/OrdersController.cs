@@ -90,6 +90,23 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+    [HttpGet("admin/{id}")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult GetOrderByIdForAdmin (int id)
+    {
+        var order = _context.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .FirstOrDefault(o => o.Id == id);
+
+        if (order == null)
+        {
+            return NotFound("Order not found");
+        }
+
+        return Ok(order);
+    }
+
     [HttpGet("{id}")]
     public IActionResult GetOrderById (int id)
     {
