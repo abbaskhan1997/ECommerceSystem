@@ -33,6 +33,26 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+    [HttpGet("{id}")]
+    public IActionResult GetOrderById (int id)
+    {
+        var userId = int.Parse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var order = _context.Orders
+            .Where(o => o.UserId == userId && o.Id == id)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .FirstOrDefault();
+
+        if (order == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(order);
+    }
+
     [HttpPost]
     public IActionResult CreateOrder ()
     {
