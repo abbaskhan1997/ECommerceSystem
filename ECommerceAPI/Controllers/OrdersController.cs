@@ -78,6 +78,18 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult GetAllOrders ()
+    {
+        var orders = _context.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ToList();
+
+        return Ok(orders);
+    }
+
     [HttpGet("{id}")]
     public IActionResult GetOrderById (int id)
     {
