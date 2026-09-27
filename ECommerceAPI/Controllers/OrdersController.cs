@@ -55,6 +55,7 @@ public class OrdersController : ControllerBase
         }
 
         _context.Orders.Add(order);
+        _context.CartItems.RemoveRange(cart.CartItems);
         _context.SaveChanges();
 
         return Ok(order);
