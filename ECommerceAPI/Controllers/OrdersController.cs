@@ -53,6 +53,28 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+    [HttpGet("{orderId}/items/{orderItemId}")]
+    public IActionResult GetOrderItemById (int orderId, int orderItemId)
+    {
+        var userId = int.Parse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var orderItem = _context.OrderItems
+            .Include(oi => oi.Product)
+            .Include(oi => oi.Order)
+            .FirstOrDefault(oi =>
+                oi.Id == orderItemId &&
+                oi.OrderId == orderId &&
+                oi.Order!.UserId == userId);
+
+        if (orderItem == null)
+        {
+            return NotFound("Order item not found");
+        }
+
+        return Ok(orderItem);
+    }
+
     [HttpPost]
     public IActionResult CreateOrder ()
     {
