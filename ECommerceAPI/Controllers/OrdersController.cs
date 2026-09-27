@@ -18,63 +18,6 @@ public class OrdersController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    public IActionResult GetMyOrders ()
-    {
-        var userId = int.Parse(
-            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-
-        var orders = _context.Orders
-            .Where(o => o.UserId == userId)
-            .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
-            .ToList();
-
-        return Ok(orders);
-    }
-
-    [HttpGet("{id}")]
-    public IActionResult GetOrderById (int id)
-    {
-        var userId = int.Parse(
-            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-
-        var order = _context.Orders
-            .Where(o => o.UserId == userId && o.Id == id)
-            .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
-            .FirstOrDefault();
-
-        if (order == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(order);
-    }
-
-    [HttpGet("{orderId}/items/{orderItemId}")]
-    public IActionResult GetOrderItemById (int orderId, int orderItemId)
-    {
-        var userId = int.Parse(
-            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-
-        var orderItem = _context.OrderItems
-            .Include(oi => oi.Product)
-            .Include(oi => oi.Order)
-            .FirstOrDefault(oi =>
-                oi.Id == orderItemId &&
-                oi.OrderId == orderId &&
-                oi.Order!.UserId == userId);
-
-        if (orderItem == null)
-        {
-            return NotFound("Order item not found");
-        }
-
-        return Ok(orderItem);
-    }
-
     [HttpPost]
     public IActionResult CreateOrder ()
     {
@@ -112,10 +55,69 @@ public class OrdersController : ControllerBase
         }
 
         _context.Orders.Add(order);
+
         _context.CartItems.RemoveRange(cart.CartItems);
+
         _context.SaveChanges();
 
         return Ok(order);
+    }
+
+    [HttpGet]
+    public IActionResult GetMyOrders ()
+    {
+        var userId = int.Parse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var orders = _context.Orders
+            .Where(o => o.UserId == userId)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ToList();
+
+        return Ok(orders);
+    }
+
+    [HttpGet("{id}")]
+    public IActionResult GetOrderById (int id)
+    {
+        var userId = int.Parse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var order = _context.Orders
+            .Where(o => o.Id == id && o.UserId == userId)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .FirstOrDefault();
+
+        if (order == null)
+        {
+            return NotFound("Order not found");
+        }
+
+        return Ok(order);
+    }
+
+    [HttpGet("{orderId}/items/{orderItemId}")]
+    public IActionResult GetOrderItemById (int orderId, int orderItemId)
+    {
+        var userId = int.Parse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var orderItem = _context.OrderItems
+            .Include(oi => oi.Product)
+            .Include(oi => oi.Order)
+            .FirstOrDefault(oi =>
+                oi.Id == orderItemId &&
+                oi.OrderId == orderId &&
+                oi.Order!.UserId == userId);
+
+        if (orderItem == null)
+        {
+            return NotFound("Order item not found");
+        }
+
+        return Ok(orderItem);
     }
 
     [HttpPost("{id}/checkout")]
@@ -159,5 +161,4 @@ public class OrdersController : ControllerBase
 
         return Ok(order);
     }
-
 }
