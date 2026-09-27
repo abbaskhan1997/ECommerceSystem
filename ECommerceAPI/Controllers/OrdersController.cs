@@ -107,6 +107,39 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+    [HttpPut("admin/{id}/status")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult UpdateOrderStatus (int id, string status)
+    {
+        var order = _context.Orders.FirstOrDefault(o => o.Id == id);
+
+        if (order == null)
+        {
+            return NotFound("Order not found");
+        }
+
+        var allowedStatuses = new[]
+        {
+        "Pending",
+        "Confirmed",
+        "Processing",
+        "Shipped",
+        "Delivered",
+        "Cancelled"
+    };
+
+        if (!allowedStatuses.Contains(status))
+        {
+            return BadRequest("Invalid order status");
+        }
+
+        order.Status = status;
+
+        _context.SaveChanges();
+
+        return Ok(order);
+    }
+
     [HttpGet("{id}")]
     public IActionResult GetOrderById (int id)
     {
