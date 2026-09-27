@@ -18,6 +18,21 @@ public class OrdersController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
+    public IActionResult GetMyOrders ()
+    {
+        var userId = int.Parse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var orders = _context.Orders
+            .Where(o => o.UserId == userId)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ToList();
+
+        return Ok(orders);
+    }
+
     [HttpPost]
     public IActionResult CreateOrder ()
     {
