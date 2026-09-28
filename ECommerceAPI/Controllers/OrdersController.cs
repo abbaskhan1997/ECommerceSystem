@@ -165,6 +165,11 @@ public class OrdersController : ControllerBase
 
         order.PaymentStatus = paymentStatus;
 
+        if (paymentStatus == "Paid" && order.PaymentMethod == "COD")
+        {
+            order.Status = "Delivered";
+        }
+
         _context.SaveChanges();
 
         return Ok(order);
