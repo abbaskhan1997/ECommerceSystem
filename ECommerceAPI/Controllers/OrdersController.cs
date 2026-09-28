@@ -140,6 +140,36 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+    [HttpPut("admin/{id}/payment")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult UpdatePaymentStatus (int id, string paymentStatus)
+    {
+        var order = _context.Orders.FirstOrDefault(o => o.Id == id);
+
+        if (order == null)
+        {
+            return NotFound("Order not found");
+        }
+
+        var allowedPaymentStatuses = new[]
+        {
+        "Pending",
+        "Paid",
+        "Failed"
+    };
+
+        if (!allowedPaymentStatuses.Contains(paymentStatus))
+        {
+            return BadRequest("Invalid payment status");
+        }
+
+        order.PaymentStatus = paymentStatus;
+
+        _context.SaveChanges();
+
+        return Ok(order);
+    }
+
     [HttpGet("{id}")]
     public IActionResult GetOrderById (int id)
     {
