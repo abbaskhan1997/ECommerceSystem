@@ -19,4 +19,8 @@ public class Order
     public DateTime OrderDate { get; set; } = DateTime.Now;
 
     public List<OrderItem> OrderItems { get; set; } = new();
+
+    public int DeliveryAddressId { get; set; }
+
+    public DeliveryAddress? DeliveryAddress { get; set; }
 }

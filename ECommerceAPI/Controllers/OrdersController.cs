@@ -1,4 +1,5 @@
 ﻿using ECommerceAPI.Data;
+using ECommerceAPI.DTOs;
 using ECommerceAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,8 +20,16 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost]
-    public IActionResult CreateOrder ()
+    public IActionResult CreateOrder (CreateOrderRequest request)
     {
+        var deliveryAddress = new DeliveryAddress
+        {
+            FullName = request.FullName,
+            Phone = request.Phone,
+            Address = request.Address,
+            City = request.City
+        };
+
         var userId = int.Parse(
             User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
 
@@ -39,7 +48,8 @@ public class OrdersController : ControllerBase
             UserId = userId,
             TotalAmount = cart.CartItems.Sum(
                 ci => ci.Product!.Price * ci.Quantity),
-            Status = "Pending"
+            Status = "Pending",
+            DeliveryAddress = deliveryAddress
         };
 
         foreach (var cartItem in cart.CartItems)
