@@ -98,4 +98,59 @@ public class UsersController : ControllerBase
 
         return Ok("Password changed successfully");
     }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public IActionResult ForgotPassword (ForgotPasswordRequest request)
+    {
+        var user = _context.Users
+            .FirstOrDefault(u => u.Email == request.Email);
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        var resetToken = Guid.NewGuid().ToString();
+
+        user.ResetToken = resetToken;
+        user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+
+        _context.SaveChanges();
+
+        return Ok(new
+        {
+            message = "Reset token generated successfully",
+            token = resetToken
+        });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public IActionResult ResetPassword (ResetPasswordRequest request)
+    {
+        var user = _context.Users
+            .FirstOrDefault(u => u.ResetToken == request.Token);
+
+        if (user == null)
+        {
+            return BadRequest("Invalid reset token");
+        }
+
+        if (user.ResetTokenExpiry == null ||
+            user.ResetTokenExpiry < DateTime.UtcNow)
+        {
+            return BadRequest("Reset token has expired");
+        }
+
+        user.Password = BCrypt.Net.BCrypt.HashPassword(
+            request.NewPassword);
+
+        user.ResetToken = null;
+        user.ResetTokenExpiry = null;
+
+        _context.SaveChanges();
+
+        return Ok("Password reset successfully");
+    }
 }

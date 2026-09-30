@@ -11,4 +11,9 @@ public class User
     public string Password { get; set; } = string.Empty;
 
     public string Role { get; set; } = "User";
+
+    public string? ResetToken { get; set; }
+
+    public DateTime? ResetTokenExpiry { get; set; }
+
 }
