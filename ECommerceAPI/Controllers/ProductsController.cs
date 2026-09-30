@@ -27,12 +27,25 @@ namespace ECommerceAPI.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetProducts()
+        public IActionResult GetProducts (string? search, int? categoryId)
         {
             var products = _context.Products
-    .Include(p => p.Category)
-    .ToList();
-            return Ok(products);
+                .Include(p => p.Category)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                products = products.Where(p =>
+                    p.Name.Contains(search));
+            }
+
+            if (categoryId.HasValue)
+            {
+                products = products.Where(p =>
+                    p.CategoryId == categoryId.Value);
+            }
+
+            return Ok(products.ToList());
         }
 
         [HttpGet("{id}")]
