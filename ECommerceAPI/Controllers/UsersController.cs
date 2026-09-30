@@ -42,4 +42,30 @@ public class UsersController : ControllerBase
 
         return Ok(profile);
     }
+
+    [HttpPut("profile")]
+    public IActionResult UpdateProfile (UpdateProfileRequest request)
+    {
+        var userId = int.Parse(
+            User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        user.Name = request.Name;
+        user.Email = request.Email;
+
+        _context.SaveChanges();
+
+        return Ok(new UserProfileResponse
+        {
+            Name = user.Name,
+            Email = user.Email,
+            Role = user.Role
+        });
+    }
 }
