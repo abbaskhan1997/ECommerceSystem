@@ -27,7 +27,7 @@ namespace ECommerceAPI.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetProducts (string? search, int? categoryId)
+        public IActionResult GetProducts (string? search, int? categoryId, int pageNumber = 1, int pageSize = 10)
         {
             var products = _context.Products
                 .Include(p => p.Category)
@@ -45,7 +45,21 @@ namespace ECommerceAPI.Controllers
                     p.CategoryId == categoryId.Value);
             }
 
-            return Ok(products.ToList());
+            var totalProducts = products.Count();
+            var skip =(pageNumber - 1) * pageSize;
+
+            var result = products.Skip(skip)
+                .Take(pageSize)
+                .ToList();
+
+
+            return Ok(new
+            {
+                totalProducts,
+                pageNumber,
+                pageSize,
+                products = result
+            });
         }
 
         [HttpGet("{id}")]
