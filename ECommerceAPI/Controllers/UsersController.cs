@@ -1,7 +1,10 @@
 ﻿using ECommerceAPI.Data;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using ECommerceAPI.DTOs;
 
 namespace ECommerceAPI.Controllers;
 
@@ -30,6 +33,13 @@ public class UsersController : ControllerBase
             return NotFound("User not found");
         }
 
-        return Ok(user);
+        var profile = new UserProfileResponse
+        {
+            Name=user.Name,
+            Email = user.Email,
+            Role =user.Role,
+        };
+
+        return Ok(profile);
     }
 }
