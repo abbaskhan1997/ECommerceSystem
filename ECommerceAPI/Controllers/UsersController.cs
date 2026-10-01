@@ -153,4 +153,91 @@ public class UsersController : ControllerBase
 
         return Ok("Password reset successfully");
     }
+
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public IActionResult GetUsers ()
+    {
+        var users = _context.Users
+            .Select(u => new
+            {
+                u.Id,
+                u.Name,
+                u.Email,
+                u.Role
+            })
+            .ToList();
+
+        return Ok(users);
+    }
+
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult GetUserById (int id)
+    {
+        var user = _context.Users
+            .Where(u => u.Id == id)
+            .Select(u => new
+            {
+                u.Id,
+                u.Name,
+                u.Email,
+                u.Role
+            })
+            .FirstOrDefault();
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        return Ok(user);
+    }
+
+    [HttpPut("{id}/role")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult UpdateUserRole (int id, string role)
+    {
+        var user = _context.Users.FirstOrDefault(u => u.Id == id);
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        if (role != "User" && role != "Admin")
+        {
+            return BadRequest("Invalid role");
+        }
+
+        user.Role = role;
+
+        _context.SaveChanges();
+
+        return Ok(new
+        {
+            user.Id,
+            user.Name,
+            user.Email,
+            user.Role
+        });
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult DeleteUser (int id)
+    {
+        var user = _context.Users.FirstOrDefault(u => u.Id == id);
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        _context.Users.Remove(user);
+        _context.SaveChanges();
+
+        return Ok("User deleted successfully");
+    }
+
 }
