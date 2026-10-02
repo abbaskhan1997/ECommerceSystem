@@ -233,10 +233,15 @@ public class OrdersController : ControllerBase
         var userId = int.Parse(
             User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
 
+        using var transaction = _context.Database
+            .BeginTransaction(System.Data.IsolationLevel.Serializable);
+
         var order = _context.Orders
             .Include(o => o.OrderItems)
             .ThenInclude(oi => oi.Product)
-            .FirstOrDefault(o => o.Id == id && o.UserId == userId);
+            .FirstOrDefault(o =>
+                o.Id == id &&
+                o.UserId == userId);
 
         if (order == null)
         {
@@ -252,6 +257,8 @@ public class OrdersController : ControllerBase
         {
             if (orderItem.Quantity > orderItem.Product!.StockQuantity)
             {
+                transaction.Rollback();
+
                 return BadRequest(
                     $"Not enough stock for product {orderItem.ProductId}");
             }
@@ -266,6 +273,9 @@ public class OrdersController : ControllerBase
 
         _context.SaveChanges();
 
+        transaction.Commit();
+
         return Ok(order);
     }
+
 }
