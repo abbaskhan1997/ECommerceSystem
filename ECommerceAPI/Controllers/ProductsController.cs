@@ -19,13 +19,6 @@ namespace ECommerceAPI.Controllers
             _context = context;
         }
 
-        [HttpGet("admin-test")]
-        [Authorize(Roles = "Admin")]
-        public IActionResult AdminTest ()
-        {
-            return Ok("Admin access granted");
-        }
-
         [HttpGet]
         public IActionResult GetProducts (string? search, int? categoryId, int pageNumber = 1, int pageSize = 10)
         {

@@ -72,6 +72,9 @@ builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 
+//MiddlewareFactory register
+app.UseMiddleware<ECommerceAPI.Middleware.ExceptionMiddleware>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
