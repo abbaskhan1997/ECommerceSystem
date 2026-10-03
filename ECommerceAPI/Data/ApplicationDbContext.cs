@@ -24,6 +24,8 @@ namespace ECommerceAPI.Data
 
         public DbSet<DeliveryAddress> DeliveryAddresses { get; set; }
 
+        public DbSet<School> Schools { get; set; }
+
         protected override void OnModelCreating (ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Product>()
