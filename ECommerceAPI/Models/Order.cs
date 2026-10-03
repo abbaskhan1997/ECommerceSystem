@@ -1,4 +1,6 @@
-﻿namespace ECommerceAPI.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ECommerceAPI.Models;
 
 public class Order
 {
@@ -20,6 +22,7 @@ public class Order
 
     public List<OrderItem> OrderItems { get; set; } = new();
 
+    [Range(1, int.MaxValue)]
     public int DeliveryAddressId { get; set; }
 
     public DeliveryAddress? DeliveryAddress { get; set; }
