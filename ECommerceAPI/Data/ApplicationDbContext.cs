@@ -26,6 +26,8 @@ namespace ECommerceAPI.Data
 
         public DbSet<School> Schools { get; set; }
 
+        public DbSet<SchoolClass> SchoolClasses { get; set; }
+
         protected override void OnModelCreating (ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Product>()

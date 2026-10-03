@@ -10,6 +10,10 @@ public class Category
     [Required]
     public string Name { get; set; } = string.Empty;
 
+    public int SchoolId { get; set; }
+
+    public School? School { get; set; }
+
     [JsonIgnore]
     public List<Product> Products { get; set; } = new();
 }
