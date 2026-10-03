@@ -124,10 +124,4 @@ Main entities:
 5. Run the project.
 6. Open Swagger to test the API.
 
-## API Documentation
 
-Swagger / OpenAPI is included for testing and exploring the API endpoints.
-
-## Author
-
-Abbas Khan
