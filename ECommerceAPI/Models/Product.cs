@@ -20,4 +20,12 @@ public class Product
     public int CategoryId { get; set; }
 
     public Category? Category { get; set; }
+
+    public int SchoolId { get; set; }
+
+    public School? School { get; set; }
+
+    public int SchoolClassId { get; set; }
+
+    public SchoolClass? SchoolClass { get; set; }
 }

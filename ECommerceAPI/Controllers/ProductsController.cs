@@ -20,7 +20,13 @@ namespace ECommerceAPI.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetProducts (string? search, int? categoryId, int pageNumber = 1, int pageSize = 10)
+        public IActionResult GetProducts (
+            string? search,
+             int? categoryId,
+             int? schoolId,
+             int? schoolClassId,
+             int pageNumber = 1,
+             int pageSize = 10)
         {
             var products = _context.Products
                 .Include(p => p.Category)

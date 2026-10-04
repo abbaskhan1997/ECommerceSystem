@@ -33,6 +33,30 @@ namespace ECommerceAPI.Data
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
                 .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.School)
+                .WithMany()
+                .HasForeignKey(p => p.SchoolId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.SchoolClass)
+                .WithMany()
+                .HasForeignKey(p => p.SchoolClassId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SchoolClass>()
+                .HasOne(sc => sc.School)
+                .WithMany()
+                .HasForeignKey(sc => sc.SchoolId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }
