@@ -24,9 +24,9 @@ namespace ECommerceAPI.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login (string email, string password)
+        public IActionResult Login ([FromBody] LoginRequest request)
         {
-            var token = _authService.Login(email, password);
+            var token = _authService.Login(request.Email, request.Password);
 
             if (string.IsNullOrEmpty(token))
             {
