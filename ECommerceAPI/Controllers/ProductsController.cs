@@ -66,6 +66,8 @@ namespace ECommerceAPI.Controllers
         {
             var product = _context.Products
      .Include(p => p.Category)
+     .Include(p => p.School)
+     .Include(p => p.SchoolClass)
      .FirstOrDefault(p => p.Id == id);
 
             if (product == null)
