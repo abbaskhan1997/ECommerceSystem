@@ -1,10 +1,11 @@
 ﻿using ECommerceAPI.Data;
+using ECommerceAPI.DTOs;
+using ECommerceAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using ECommerceAPI.DTOs;
 
 namespace ECommerceAPI.Controllers;
 
@@ -14,10 +15,12 @@ namespace ECommerceAPI.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly EmailService _emailService;
 
-    public UsersController (ApplicationDbContext context)
+    public UsersController (ApplicationDbContext context,EmailService emailService)
     {
         _context = context;
+        _emailService = emailService;
     }
 
     [HttpGet("profile")]
@@ -118,10 +121,15 @@ public class UsersController : ControllerBase
 
         _context.SaveChanges();
 
+        _emailService.SendEmail(
+    user.Email,
+    "Password Reset",
+    $"Click this link to reset your password: http://localhost:4200/reset-password?token={resetToken}"
+);
+
         return Ok(new
         {
-            message = "Reset token generated successfully",
-            token = resetToken
+            message = "Password reset link sent to your email"
         });
     }
 
