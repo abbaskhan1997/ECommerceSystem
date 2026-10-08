@@ -30,6 +30,9 @@ namespace ECommerceAPI.Controllers
         {
             var products = _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Category)
+                .Include(p => p.School)
+                .Include(p => p.SchoolClass)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(search))
