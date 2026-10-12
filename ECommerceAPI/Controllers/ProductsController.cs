@@ -35,10 +35,20 @@ namespace ECommerceAPI.Controllers
                 .Include(p => p.SchoolClass)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(search))
+            if (!string.IsNullOrWhiteSpace(search))
             {
-                products = products.Where(p =>
-                    p.Name.Contains(search));
+                var searchWords = search
+                    .ToLower()
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var word in searchWords)
+                {
+                    products = products.Where(p =>
+                        (p.Name != null && p.Name.ToLower().Contains(word)) ||
+                        (p.School != null && p.School.Name.ToLower().Contains(word)) ||
+                        (p.SchoolClass != null && p.SchoolClass.Name.ToLower().Contains(word))
+                    );
+                }
             }
 
             if (categoryId.HasValue)
