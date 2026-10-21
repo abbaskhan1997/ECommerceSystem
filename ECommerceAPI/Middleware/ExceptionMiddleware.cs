@@ -19,18 +19,22 @@ namespace ECommerceAPI.Middleware
             }
             catch (Exception ex)
             {
+                // Actual error Visual Studio ke Output mein dekho
+                Console.WriteLine("ERROR: " + ex);
+                Console.WriteLine("INNER ERROR: " + ex.InnerException?.Message);
+
                 context.Response.StatusCode = 500;
                 context.Response.ContentType = "application/json";
 
                 var response = new
                 {
                     message = "Something went wrong",
-                    error = ex.Message
+                    error = ex.InnerException?.Message ?? ex.Message
                 };
 
                 await context.Response.WriteAsync(
                     JsonSerializer.Serialize(response));
             }
         }
-        }
+    }
 }

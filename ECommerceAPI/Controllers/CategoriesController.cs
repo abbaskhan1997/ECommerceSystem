@@ -79,13 +79,41 @@ namespace ECommerceAPI.Controllers
 
             if (category == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    message = "Category not found."
+                });
             }
 
-            _context.Categories.Remove(category);
-            _context.SaveChanges();
+            // Check whether this category contains products.
+            bool hasProducts = _context.Products
+                .Any(product => product.CategoryId == id);
 
-            return Ok(category);
+            if (hasProducts)
+            {
+                return BadRequest(new
+                {
+                    message = "This category cannot be deleted because it contains products."
+                });
+            }
+
+            try
+            {
+                _context.Categories.Remove(category);
+                _context.SaveChanges();
+
+                return Ok(new
+                {
+                    message = "Category deleted successfully."
+                });
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                return BadRequest(new
+                {
+                    message = "Unable to delete this category because it is being used by a product."
+                });
+            }
         }
 
     }
