@@ -76,9 +76,22 @@ public class SchoolClassesController : ControllerBase
             return NotFound("Class not found");
         }
 
+        // Find all products linked to this class.
+        var products = _context.Products
+            .Where(p => p.SchoolClassId == id)
+            .ToList();
+
+        // Unlink the products from the class without deleting them.
+        foreach (var product in products)
+        {
+            product.SchoolClassId = null;
+        }
+
+        // Delete the class while keeping all linked products.
         _context.SchoolClasses.Remove(schoolClass);
         _context.SaveChanges();
 
         return Ok("Class deleted successfully");
     }
+
 }

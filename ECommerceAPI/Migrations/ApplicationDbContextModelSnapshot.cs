@@ -205,7 +205,7 @@ namespace ECommerceAPI.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("SchoolClassId")
+                    b.Property<int?>("SchoolClassId")
                         .HasColumnType("int");
 
                     b.Property<int>("SchoolId")
@@ -378,8 +378,7 @@ namespace ECommerceAPI.Migrations
                     b.HasOne("ECommerceAPI.Models.SchoolClass", "SchoolClass")
                         .WithMany()
                         .HasForeignKey("SchoolClassId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ECommerceAPI.Models.School", "School")
                         .WithMany()

@@ -25,7 +25,7 @@ public class Product
 
     public School? School { get; set; }
 
-    public int SchoolClassId { get; set; }
+    public int? SchoolClassId { get; set; }
 
     public SchoolClass? SchoolClass { get; set; }
 }
