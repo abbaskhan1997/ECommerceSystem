@@ -17,13 +17,22 @@ public class SchoolClassesController : ControllerBase
         _context = context;
     }
 
+
     [HttpGet]
-    public IActionResult GetClasses ()
+    public IActionResult GetClasses (int? schoolId)
     {
-        var classes = _context.SchoolClasses.ToList();
+        var query = _context.SchoolClasses.AsQueryable();
+
+        if (schoolId.HasValue)
+        {
+            query = query.Where(c => c.SchoolId == schoolId.Value);
+        }
+
+        var classes = query.ToList();
 
         return Ok(classes);
     }
+
 
     [HttpGet("{id}")]
     public IActionResult GetClassById (int id)

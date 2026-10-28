@@ -51,10 +51,16 @@ namespace ECommerceAPI.Controllers
                 }
             }
 
-            if (categoryId.HasValue)
+            // Filter products by school
+            if (schoolId.HasValue)
             {
-                products = products.Where(p =>
-                    p.CategoryId == categoryId.Value);
+                products = products.Where(p => p.SchoolId == schoolId.Value);
+            }
+
+            // Filter products by school class
+            if (schoolClassId.HasValue)
+            {
+                products = products.Where(p => p.SchoolClassId == schoolClassId.Value);
             }
 
             var totalProducts = products.Count();

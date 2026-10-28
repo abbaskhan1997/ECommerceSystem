@@ -18,11 +18,23 @@ namespace ECommerceAPI.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetCategories ()
+        public IActionResult GetCategories (int? schoolClassId)
         {
-            var categories = _context.Categories.ToList();
+            if (schoolClassId.HasValue)
+            {
+                var categories = _context.Products
+                    .Where(p => p.SchoolClassId == schoolClassId.Value)
+                    .Select(p => p.Category)
+                    .Where(c => c != null)
+                    .Distinct()
+                    .ToList();
 
-            return Ok(categories);
+                return Ok(categories);
+            }
+
+            var allCategories = _context.Categories.ToList();
+
+            return Ok(allCategories);
         }
 
         [HttpGet("{id}")]

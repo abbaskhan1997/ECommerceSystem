@@ -7,7 +7,7 @@ namespace ECommerceAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+
 public class SchoolsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -18,6 +18,7 @@ public class SchoolsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public IActionResult GetSchools ()
     {
         var schools = _context.Schools.ToList();
@@ -26,6 +27,7 @@ public class SchoolsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public IActionResult GetSchoolById (int id)
     {
         var school = _context.Schools.Find(id);
