@@ -51,6 +51,13 @@ namespace ECommerceAPI.Controllers
                 }
             }
 
+            // Filter products by category
+            if (categoryId.HasValue)
+            {
+                products = products.Where(p =>
+                    p.CategoryId == categoryId.Value);
+            }
+
             // Filter products by school
             if (schoolId.HasValue)
             {
