@@ -83,7 +83,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //Add Services
 builder.Services.AddScoped<AuthService>();
 
+
 var app = builder.Build();
+
+app.UseStaticFiles();
 
 
 

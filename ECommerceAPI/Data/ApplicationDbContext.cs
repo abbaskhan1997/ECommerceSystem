@@ -28,6 +28,9 @@ namespace ECommerceAPI.Data
 
         public DbSet<SchoolClass> SchoolClasses { get; set; }
 
+       
+        public DbSet<ProductSize> ProductSizes { get; set; } = null!;
+
         protected override void OnModelCreating (ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Product>()
@@ -57,6 +60,13 @@ namespace ECommerceAPI.Data
                 .WithMany()
                 .HasForeignKey(sc => sc.SchoolId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ProductSize>()
+    .HasOne(ps => ps.Product)
+    .WithMany()
+    .HasForeignKey(ps => ps.ProductId)
+    .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

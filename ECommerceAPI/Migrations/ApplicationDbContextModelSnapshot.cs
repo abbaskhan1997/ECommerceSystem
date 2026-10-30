@@ -197,6 +197,10 @@ namespace ECommerceAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -205,7 +209,7 @@ namespace ECommerceAPI.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("SchoolClassId")
+                    b.Property<int>("SchoolClassId")
                         .HasColumnType("int");
 
                     b.Property<int>("SchoolId")
@@ -223,6 +227,31 @@ namespace ECommerceAPI.Migrations
                     b.HasIndex("SchoolId");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("ECommerceAPI.Models.ProductSize", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Size")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StockQuantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductSizes");
                 });
 
             modelBuilder.Entity("ECommerceAPI.Models.School", b =>
@@ -378,7 +407,8 @@ namespace ECommerceAPI.Migrations
                     b.HasOne("ECommerceAPI.Models.SchoolClass", "SchoolClass")
                         .WithMany()
                         .HasForeignKey("SchoolClassId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("ECommerceAPI.Models.School", "School")
                         .WithMany()
@@ -391,6 +421,17 @@ namespace ECommerceAPI.Migrations
                     b.Navigation("School");
 
                     b.Navigation("SchoolClass");
+                });
+
+            modelBuilder.Entity("ECommerceAPI.Models.ProductSize", b =>
+                {
+                    b.HasOne("ECommerceAPI.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("ECommerceAPI.Models.SchoolClass", b =>

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 namespace ECommerceAPI.Controllers
 {
@@ -14,9 +15,13 @@ namespace ECommerceAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public ProductsController(ApplicationDbContext context)
+        private readonly IWebHostEnvironment _environment;
+
+        public ProductsController(ApplicationDbContext context,
+            IWebHostEnvironment environment )
         {
             _context = context;
+            _environment = environment;
         }
 
         [HttpGet]
@@ -138,6 +143,55 @@ namespace ECommerceAPI.Controllers
             _context.Products.Remove(product);
             _context.SaveChanges();
             return NoContent();
+        }
+
+        [HttpPost("upload-image")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UploadProductImage ([FromForm] IFormFile image)
+        {
+            if (image == null || image.Length == 0)
+            {
+                return BadRequest("Please select an image.");
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+
+            var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest("Only JPG, JPEG, PNG and WEBP images are allowed.");
+            }
+
+            if (image.Length > 5 * 1024 * 1024)
+            {
+                return BadRequest("Image size must not exceed 5 MB.");
+            }
+
+            var webRootPath = _environment.WebRootPath
+    ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+
+            var uploadsFolder = Path.Combine(
+                webRootPath,
+                "uploads",
+                "products");
+
+            Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+
+            var imageUrl = $"/uploads/products/{fileName}";
+
+            return Ok(new
+            {
+                imageUrl
+            });
         }
 
 
