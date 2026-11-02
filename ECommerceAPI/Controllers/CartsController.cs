@@ -163,6 +163,7 @@ namespace ECommerceAPI.Controllers
             var cartItem = _context.CartItems
                 .Include(ci => ci.Cart)
                 .Include(ci => ci.Product)
+                .Include(ci => ci.ProductSize)
                 .FirstOrDefault(ci =>
                     ci.Id == cartItemId &&
                     ci.Cart!.UserId == userId);
@@ -177,7 +178,12 @@ namespace ECommerceAPI.Controllers
                 return BadRequest("Quantity must be greater than 0");
             }
 
-            if (quantity > cartItem.Product!.StockQuantity)
+            // Get stock from selected size or main product
+            var availableStock = cartItem.ProductSizeId != null
+                ? cartItem.ProductSize!.StockQuantity
+                : cartItem.Product!.StockQuantity;
+
+            if (quantity > availableStock)
             {
                 return BadRequest("Requested quantity is greater than available stock");
             }
