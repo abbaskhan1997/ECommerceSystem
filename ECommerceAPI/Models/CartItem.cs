@@ -11,6 +11,10 @@ public class CartItem
 
     public int ProductId { get; set; }
 
+    public int? ProductSizeId { get; set; }
+
+    public ProductSize? ProductSize { get; set; }
+
     [Range(1, int.MaxValue)]
     public int Quantity { get; set; }
 

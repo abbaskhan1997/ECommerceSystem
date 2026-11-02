@@ -25,9 +25,11 @@ namespace ECommerceAPI.Controllers
             var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
 
             var cart = _context.Carts
-    .Include(c => c.CartItems)
-    .ThenInclude(ci => ci.Product)
-    .FirstOrDefault(c => c.UserId == userId);
+       .Include(c => c.CartItems)
+           .ThenInclude(ci => ci.Product)
+       .Include(c => c.CartItems)
+           .ThenInclude(ci => ci.ProductSize)
+       .FirstOrDefault(c => c.UserId == userId);
 
             if (cart == null)
             {
@@ -59,7 +61,44 @@ namespace ECommerceAPI.Controllers
                 return NotFound("Product not found");
             }
 
-           
+            if (request.Quantity <= 0)
+            {
+                return BadRequest("Quantity must be greater than 0");
+            }
+
+            // Check whether the product has sizes
+            var hasSizes = _context.ProductSizes
+                .Any(ps => ps.ProductId == request.ProductId);
+
+            ProductSize? productSize = null;
+
+            if (hasSizes && request.ProductSizeId == null)
+            {
+                return BadRequest("Please select a product size");
+            }
+
+            if (!hasSizes && request.ProductSizeId != null)
+            {
+                return BadRequest("This product does not have sizes");
+            }
+
+            // Find the selected size
+            if (request.ProductSizeId != null)
+            {
+                productSize = _context.ProductSizes.FirstOrDefault(ps =>
+                    ps.Id == request.ProductSizeId &&
+                    ps.ProductId == request.ProductId);
+
+                if (productSize == null)
+                {
+                    return BadRequest("Invalid product size");
+                }
+            }
+
+            // Get available stock
+            var availableStock = productSize != null
+                ? productSize.StockQuantity
+                : product.StockQuantity;
 
             var cart = _context.Carts
                 .FirstOrDefault(c => c.UserId == userId);
@@ -75,32 +114,27 @@ namespace ECommerceAPI.Controllers
                 _context.SaveChanges();
             }
 
-            var cartItem = _context.CartItems
-                .FirstOrDefault(ci =>
-                    ci.CartId == cart.Id &&
-                    ci.ProductId == request.ProductId);
-
-            if (request.Quantity <= 0)
-            {
-                return BadRequest("Quantity must be greater than 0");
-            }
+            // Find cart item using product and selected size
+            var cartItem = _context.CartItems.FirstOrDefault(ci =>
+                ci.CartId == cart.Id &&
+                ci.ProductId == request.ProductId &&
+                ci.ProductSizeId == request.ProductSizeId);
 
             var newQuantity = request.Quantity;
 
             if (cartItem != null)
             {
-                newQuantity = cartItem.Quantity + request.Quantity;
+                newQuantity += cartItem.Quantity;
             }
 
-            if (newQuantity > product.StockQuantity)
+            if (newQuantity > availableStock)
             {
                 return BadRequest("Requested quantity is greater than available stock");
             }
 
-
             if (cartItem != null)
             {
-                cartItem.Quantity += request.Quantity;
+                cartItem.Quantity = newQuantity;
             }
             else
             {
@@ -108,6 +142,7 @@ namespace ECommerceAPI.Controllers
                 {
                     CartId = cart.Id,
                     ProductId = request.ProductId,
+                    ProductSizeId = request.ProductSizeId,
                     Quantity = request.Quantity
                 };
 

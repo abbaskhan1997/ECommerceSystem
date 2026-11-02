@@ -57,6 +57,7 @@ public class OrdersController : ControllerBase
             var orderItem = new OrderItem
             {
                 ProductId = cartItem.ProductId,
+                ProductSizeId = cartItem.ProductSizeId,
                 Quantity = cartItem.Quantity,
                 Price = cartItem.Product!.Price
             };
@@ -237,11 +238,13 @@ public class OrdersController : ControllerBase
             .BeginTransaction(System.Data.IsolationLevel.Serializable);
 
         var order = _context.Orders
-            .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
-            .FirstOrDefault(o =>
-                o.Id == id &&
-                o.UserId == userId);
+     .Include(o => o.OrderItems)
+         .ThenInclude(oi => oi.Product)
+     .Include(o => o.OrderItems)
+         .ThenInclude(oi => oi.ProductSize)
+     .FirstOrDefault(o =>
+         o.Id == id &&
+         o.UserId == userId);
 
         if (order == null)
         {
@@ -255,7 +258,11 @@ public class OrdersController : ControllerBase
 
         foreach (var orderItem in order.OrderItems)
         {
-            if (orderItem.Quantity > orderItem.Product!.StockQuantity)
+            var availableStock = orderItem.ProductSizeId != null
+                ? orderItem.ProductSize!.StockQuantity
+                : orderItem.Product!.StockQuantity;
+
+            if (orderItem.Quantity > availableStock)
             {
                 transaction.Rollback();
 
@@ -266,7 +273,24 @@ public class OrdersController : ControllerBase
 
         foreach (var orderItem in order.OrderItems)
         {
-            orderItem.Product!.StockQuantity -= orderItem.Quantity;
+            if (orderItem.ProductSizeId != null)
+            {
+                // Reduce selected size stock
+                orderItem.ProductSize!.StockQuantity -= orderItem.Quantity;
+
+                // Update main product stock from all sizes
+                var productSizes = _context.ProductSizes
+                    .Where(ps => ps.ProductId == orderItem.ProductId)
+                    .ToList();
+
+                orderItem.Product!.StockQuantity =
+                    productSizes.Sum(ps => ps.StockQuantity);
+            }
+            else
+            {
+                // Reduce main stock for products without sizes
+                orderItem.Product!.StockQuantity -= orderItem.Quantity;
+            }
         }
 
         order.Status = "Confirmed";
