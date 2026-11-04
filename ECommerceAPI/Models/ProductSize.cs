@@ -1,5 +1,5 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ECommerceAPI.Models;
 
@@ -9,6 +9,7 @@ public class ProductSize
 
     public int ProductId { get; set; }
 
+    [JsonIgnore]
     public Product? Product { get; set; }
 
     [Required]

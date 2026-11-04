@@ -30,6 +30,7 @@ namespace ECommerceAPI.Controllers
              int? categoryId,
              int? schoolId,
              int? schoolClassId,
+             
              int pageNumber = 1,
              int pageSize = 10)
         {
@@ -96,10 +97,11 @@ namespace ECommerceAPI.Controllers
         public IActionResult GetProductById (int id)
         {
             var product = _context.Products
-     .Include(p => p.Category)
-     .Include(p => p.School)
-     .Include(p => p.SchoolClass)
-     .FirstOrDefault(p => p.Id == id);
+                .Include(p => p.Category)
+                .Include(p => p.School)
+                .Include(p => p.SchoolClass)
+                .Include(p => p.ProductSizes)
+                .FirstOrDefault(p => p.Id == id);
 
             if (product == null)
             {

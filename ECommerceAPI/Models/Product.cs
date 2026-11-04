@@ -35,4 +35,7 @@ public class Product
 
     [ValidateNever]
     public SchoolClass? SchoolClass { get; set; }
+
+    [ValidateNever]
+    public ICollection<ProductSize> ProductSizes { get; set; } = new List<ProductSize>();
 }

@@ -62,10 +62,10 @@ namespace ECommerceAPI.Data
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<ProductSize>()
-    .HasOne(ps => ps.Product)
-    .WithMany()
-    .HasForeignKey(ps => ps.ProductId)
-    .OnDelete(DeleteBehavior.Cascade);
+     .HasOne(ps => ps.Product)
+     .WithMany(p => p.ProductSizes)
+     .HasForeignKey(ps => ps.ProductId)
+     .OnDelete(DeleteBehavior.Cascade);
 
         }
     }
