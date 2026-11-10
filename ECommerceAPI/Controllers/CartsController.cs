@@ -10,7 +10,7 @@ namespace ECommerceAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "User")]
     public class CartsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
