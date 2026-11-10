@@ -1,4 +1,5 @@
-﻿using ECommerceAPI.Data;
+﻿
+using ECommerceAPI.Data;
 using ECommerceAPI.DTOs;
 using ECommerceAPI.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -19,9 +20,54 @@ public class OrdersController : ControllerBase
         _context = context;
     }
 
+    // Customer places an order using Cash on Delivery
     [HttpPost]
+    [Authorize(Roles = "User")]
     public IActionResult CreateOrder (CreateOrderRequest request)
     {
+        using var transaction = _context.Database.BeginTransaction(
+            System.Data.IsolationLevel.Serializable);
+
+        var userId = int.Parse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var cart = _context.Carts
+            .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Product)
+            .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.ProductSize)
+            .FirstOrDefault(c => c.UserId == userId);
+
+        if (cart == null || !cart.CartItems.Any())
+        {
+            return BadRequest("Cart is empty");
+        }
+
+        // Check stock availability before creating the order
+        foreach (var item in cart.CartItems)
+        {
+            if (item.Product == null)
+            {
+                return BadRequest("Product not found");
+            }
+
+            if (item.ProductSizeId != null && item.ProductSize == null)
+            {
+                return BadRequest("Selected product size not found");
+            }
+
+            var availableStock = item.ProductSize != null
+                ? item.ProductSize.StockQuantity
+                : item.Product.StockQuantity;
+
+            if (item.Quantity > availableStock)
+            {
+                return BadRequest(
+                    $"Not enough stock for product {item.ProductId}");
+            }
+        }
+
+        // Create delivery address
         var deliveryAddress = new DeliveryAddress
         {
             FullName = request.FullName,
@@ -30,51 +76,73 @@ public class OrdersController : ControllerBase
             City = request.City
         };
 
-        var userId = int.Parse(
-            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-
-        var cart = _context.Carts
-            .Include(c => c.CartItems)
-            .ThenInclude(ci => ci.Product)
-            .FirstOrDefault(c => c.UserId == userId);
-
-        if (cart == null || !cart.CartItems.Any())
-        {
-            return BadRequest("Cart is empty");
-        }
-
+        // Create order
         var order = new Order
         {
             UserId = userId,
             TotalAmount = cart.CartItems.Sum(
-                ci => ci.Product!.Price * ci.Quantity),
+                item => item.Product!.Price * item.Quantity),
             Status = "Pending",
+            PaymentMethod = "COD",
+            PaymentStatus = "Pending",
             DeliveryAddress = deliveryAddress
         };
 
-        foreach (var cartItem in cart.CartItems)
+        // Create order items and reduce stock
+        foreach (var item in cart.CartItems)
         {
             var orderItem = new OrderItem
             {
-                ProductId = cartItem.ProductId,
-                ProductSizeId = cartItem.ProductSizeId,
-                Quantity = cartItem.Quantity,
-                Price = cartItem.Product!.Price
+                ProductId = item.ProductId,
+                ProductSizeId = item.ProductSizeId,
+                Quantity = item.Quantity,
+                Price = item.Product!.Price
             };
 
             order.OrderItems.Add(orderItem);
+
+            if (item.ProductSize != null)
+            {
+                item.ProductSize.StockQuantity -= item.Quantity;
+            }
+            else
+            {
+                item.Product.StockQuantity -= item.Quantity;
+            }
         }
 
-        _context.Orders.Add(order);
+        // Update main product stock from its sizes
+        var sizedProductIds = cart.CartItems
+            .Where(item => item.ProductSizeId != null)
+            .Select(item => item.ProductId)
+            .Distinct()
+            .ToList();
 
+        foreach (var productId in sizedProductIds)
+        {
+            var product = cart.CartItems
+                .First(item => item.ProductId == productId).Product!;
+
+            var sizes = _context.ProductSizes
+                .Where(size => size.ProductId == productId)
+                .ToList();
+
+            product.StockQuantity = sizes.Sum(size => size.StockQuantity);
+        }
+
+        // Save order and clear cart
+        _context.Orders.Add(order);
         _context.CartItems.RemoveRange(cart.CartItems);
 
         _context.SaveChanges();
+        transaction.Commit();
 
         return Ok(order);
     }
 
+    // Customer gets their own orders
     [HttpGet]
+    [Authorize(Roles = "User")]
     public IActionResult GetMyOrders ()
     {
         var userId = int.Parse(
@@ -82,32 +150,45 @@ public class OrdersController : ControllerBase
 
         var orders = _context.Orders
             .Where(o => o.UserId == userId)
+            .Include(o => o.DeliveryAddress)
             .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
+                .ThenInclude(oi => oi.Product)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductSize)
             .ToList();
 
         return Ok(orders);
     }
 
+    // Admin gets all orders
     [HttpGet("admin/all")]
     [Authorize(Roles = "Admin")]
     public IActionResult GetAllOrders ()
     {
         var orders = _context.Orders
+            .Include(o => o.User)
+            .Include(o => o.DeliveryAddress)
             .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
+                .ThenInclude(oi => oi.Product)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductSize)
             .ToList();
 
         return Ok(orders);
     }
 
+    // Admin gets a specific order
     [HttpGet("admin/{id}")]
     [Authorize(Roles = "Admin")]
     public IActionResult GetOrderByIdForAdmin (int id)
     {
         var order = _context.Orders
+            .Include(o => o.User)
+            .Include(o => o.DeliveryAddress)
             .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
+                .ThenInclude(oi => oi.Product)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductSize)
             .FirstOrDefault(o => o.Id == id);
 
         if (order == null)
@@ -118,6 +199,7 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+    // Admin updates order status
     [HttpPut("admin/{id}/status")]
     [Authorize(Roles = "Admin")]
     public IActionResult UpdateOrderStatus (int id, string status)
@@ -131,13 +213,13 @@ public class OrdersController : ControllerBase
 
         var allowedStatuses = new[]
         {
-        "Pending",
-        "Confirmed",
-        "Processing",
-        "Shipped",
-        "Delivered",
-        "Cancelled"
-    };
+            "Pending",
+            "Confirmed",
+            "Processing",
+            "Shipped",
+            "Delivered",
+            "Cancelled"
+        };
 
         if (!allowedStatuses.Contains(status))
         {
@@ -151,6 +233,7 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+    // Admin updates payment status
     [HttpPut("admin/{id}/payment")]
     [Authorize(Roles = "Admin")]
     public IActionResult UpdatePaymentStatus (int id, string paymentStatus)
@@ -164,10 +247,10 @@ public class OrdersController : ControllerBase
 
         var allowedPaymentStatuses = new[]
         {
-        "Pending",
-        "Paid",
-        "Failed"
-    };
+            "Pending",
+            "Paid",
+            "Failed"
+        };
 
         if (!allowedPaymentStatuses.Contains(paymentStatus))
         {
@@ -176,17 +259,14 @@ public class OrdersController : ControllerBase
 
         order.PaymentStatus = paymentStatus;
 
-        if (paymentStatus == "Paid" && order.PaymentMethod == "COD")
-        {
-            order.Status = "Delivered";
-        }
-
         _context.SaveChanges();
 
         return Ok(order);
     }
 
+    // Customer gets one of their own orders
     [HttpGet("{id}")]
+    [Authorize(Roles = "User")]
     public IActionResult GetOrderById (int id)
     {
         var userId = int.Parse(
@@ -194,8 +274,11 @@ public class OrdersController : ControllerBase
 
         var order = _context.Orders
             .Where(o => o.Id == id && o.UserId == userId)
+            .Include(o => o.DeliveryAddress)
             .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
+                .ThenInclude(oi => oi.Product)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductSize)
             .FirstOrDefault();
 
         if (order == null)
@@ -206,7 +289,9 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+    // Customer gets a specific item from their own order
     [HttpGet("{orderId}/items/{orderItemId}")]
+    [Authorize(Roles = "User")]
     public IActionResult GetOrderItemById (int orderId, int orderItemId)
     {
         var userId = int.Parse(
@@ -214,6 +299,7 @@ public class OrdersController : ControllerBase
 
         var orderItem = _context.OrderItems
             .Include(oi => oi.Product)
+            .Include(oi => oi.ProductSize)
             .Include(oi => oi.Order)
             .FirstOrDefault(oi =>
                 oi.Id == orderItemId &&
@@ -227,80 +313,4 @@ public class OrdersController : ControllerBase
 
         return Ok(orderItem);
     }
-
-    [HttpPost("{id}/checkout")]
-    public IActionResult Checkout (int id)
-    {
-        var userId = int.Parse(
-            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-
-        using var transaction = _context.Database
-            .BeginTransaction(System.Data.IsolationLevel.Serializable);
-
-        var order = _context.Orders
-     .Include(o => o.OrderItems)
-         .ThenInclude(oi => oi.Product)
-     .Include(o => o.OrderItems)
-         .ThenInclude(oi => oi.ProductSize)
-     .FirstOrDefault(o =>
-         o.Id == id &&
-         o.UserId == userId);
-
-        if (order == null)
-        {
-            return NotFound("Order not found");
-        }
-
-        if (order.Status != "Pending")
-        {
-            return BadRequest("Order is already processed");
-        }
-
-        foreach (var orderItem in order.OrderItems)
-        {
-            var availableStock = orderItem.ProductSizeId != null
-                ? orderItem.ProductSize!.StockQuantity
-                : orderItem.Product!.StockQuantity;
-
-            if (orderItem.Quantity > availableStock)
-            {
-                transaction.Rollback();
-
-                return BadRequest(
-                    $"Not enough stock for product {orderItem.ProductId}");
-            }
-        }
-
-        foreach (var orderItem in order.OrderItems)
-        {
-            if (orderItem.ProductSizeId != null)
-            {
-                // Reduce selected size stock
-                orderItem.ProductSize!.StockQuantity -= orderItem.Quantity;
-
-                // Update main product stock from all sizes
-                var productSizes = _context.ProductSizes
-                    .Where(ps => ps.ProductId == orderItem.ProductId)
-                    .ToList();
-
-                orderItem.Product!.StockQuantity =
-                    productSizes.Sum(ps => ps.StockQuantity);
-            }
-            else
-            {
-                // Reduce main stock for products without sizes
-                orderItem.Product!.StockQuantity -= orderItem.Quantity;
-            }
-        }
-
-        order.Status = "Confirmed";
-
-        _context.SaveChanges();
-
-        transaction.Commit();
-
-        return Ok(order);
-    }
-
-
 }
