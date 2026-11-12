@@ -38,10 +38,10 @@ namespace ECommerceAPI.Data
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<Product>()
-                .HasOne(p => p.School)
-                .WithMany()
-                .HasForeignKey(p => p.SchoolId)
-                .OnDelete(DeleteBehavior.NoAction);
+     .HasOne(p => p.School)
+     .WithMany(s => s.Products)
+     .HasForeignKey(p => p.SchoolId)
+     .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.SchoolClass)

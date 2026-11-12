@@ -153,6 +153,7 @@ public class OrdersController : ControllerBase
             .Include(o => o.DeliveryAddress)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Product)
+                .ThenInclude(p => p!.School)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductSize)
             .ToList();
