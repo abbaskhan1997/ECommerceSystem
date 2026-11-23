@@ -212,15 +212,17 @@ public class OrdersController : ControllerBase
             return NotFound("Order not found");
         }
 
+        //var state = _context.Entry(order).State;
+
         var allowedStatuses = new[]
         {
-            "Pending",
-            "Confirmed",
-            "Processing",
-            "Shipped",
-            "Delivered",
-            "Cancelled"
-        };
+        "Pending",
+        "Confirmed",
+        "Processing",
+        "Shipped",
+        "Delivered",
+        "Cancelled"
+    };
 
         if (!allowedStatuses.Contains(status))
         {
@@ -229,9 +231,18 @@ public class OrdersController : ControllerBase
 
         order.Status = status;
 
-        _context.SaveChanges();
+        var state = _context.Entry(order).State;
 
-        return Ok(order);
+        var rows = _context.SaveChanges();
+
+        return Ok(new
+        {
+            Message = "Status update attempted",
+            UpdatedRows = rows,
+            OrderId = order.Id,
+            Status = order.Status,
+            EntityState = state.ToString()
+        });
     }
 
     // Admin updates payment status
