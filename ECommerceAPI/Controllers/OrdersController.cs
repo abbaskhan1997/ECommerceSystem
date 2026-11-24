@@ -161,21 +161,95 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
-    // Admin gets all orders
+    // Admin gets orders with search, filters and pagination
     [HttpGet("admin/all")]
     [Authorize(Roles = "Admin")]
-    public IActionResult GetAllOrders ()
+    public IActionResult GetAllOrders (
+        string? search = null,
+        string? status = null,
+        string? paymentStatus = null,
+        int pageNumber = 1,
+        int pageSize = 10)
     {
-        var orders = _context.Orders
+        // Validate pagination parameters
+        if (pageNumber < 1 || pageSize < 1 || pageSize > 100)
+        {
+            return BadRequest("Invalid pagination parameters.");
+        }
+
+        // Prepare the query without executing it
+        var query = _context.Orders
             .Include(o => o.User)
             .Include(o => o.DeliveryAddress)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Product)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductSize)
+            .AsQueryable();
+
+        // Search by multiple words
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchWords = search.ToLower().Split(
+                (char[]?)null,
+                StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var word in searchWords)
+            {
+                query = query.Where(o =>
+                    o.Id.ToString().Contains(word) ||
+
+                    (o.User != null &&
+                        o.User.Name.ToLower().Contains(word)) ||
+
+                    (o.User != null &&
+                        o.User.Email.ToLower().Contains(word)) ||
+
+                    (o.DeliveryAddress != null &&
+                        o.DeliveryAddress.Phone.Contains(word)) ||
+
+                    o.OrderItems.Any(oi =>
+                        oi.Product != null &&
+                        oi.Product.Name.ToLower().Contains(word))
+                );
+            }
+        }
+
+        // Filter by order status
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(o => o.Status == status);
+        }
+
+        // Filter by payment status
+        if (!string.IsNullOrWhiteSpace(paymentStatus))
+        {
+            query = query.Where(o => o.PaymentStatus == paymentStatus);
+        }
+
+        // Count all matching orders before pagination
+        var totalOrders = query.Count();
+
+        // Calculate total pages
+        var totalPages = (int)Math.Ceiling(
+            totalOrders / (double)pageSize);
+
+        // Retrieve only the required page
+        var orders = query
+            .OrderByDescending(o => o.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToList();
 
-        return Ok(orders);
+        // Return orders and pagination information
+        return Ok(new
+        {
+            totalOrders,
+            totalPages,
+            pageNumber,
+            pageSize,
+            orders
+        });
     }
 
     // Admin gets a specific order
