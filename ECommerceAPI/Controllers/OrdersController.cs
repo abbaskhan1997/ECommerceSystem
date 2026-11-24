@@ -399,4 +399,18 @@ public class OrdersController : ControllerBase
 
         return Ok(orderItem);
     }
+
+    // Get total orders count for Admin Dashboard
+    [HttpGet("admin/count")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult GetOrdersCount ()
+    {
+        var totalOrders = _context.Orders.Count();
+
+        return Ok(new
+        {
+            totalOrders
+        });
+    }
+
 }

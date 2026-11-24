@@ -179,6 +179,8 @@ public class UsersController : ControllerBase
         return Ok(users);
     }
 
+
+
     [HttpGet("{id}")]
     [Authorize(Roles = "Admin")]
     public IActionResult GetUserById (int id)
